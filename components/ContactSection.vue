@@ -74,9 +74,12 @@
               />
             </div>
 
+            <!-- Error message -->
+            <p v-if="error" class="text-sm text-red-400 text-center">{{ error }}</p>
+
             <button
               type="submit"
-              :disabled="submitting"
+              :disabled="submitting || submitted"
               class="w-full py-4 rounded-xl font-exo font-semibold text-sm text-white bg-f1-gradient hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <template v-if="!submitting && !submitted">
@@ -154,12 +157,15 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+const config = useRuntimeConfig()
+
 const sectionEl = ref(null)
 const headerEl = ref(null)
 const contentEl = ref(null)
 
 const submitting = ref(false)
 const submitted = ref(false)
+const error = ref('')
 
 const form = reactive({
   name: '',
@@ -190,16 +196,40 @@ const contactInfo = [
 ]
 
 async function handleSubmit() {
+  error.value = ''
+  const formspreeId = config.public.formspreeId
+  if (!formspreeId) {
+    error.value = 'Contact form is not yet configured. Please try emailing us directly.'
+    return
+  }
+
   submitting.value = true
-  // Simulate submission (no backend yet)
-  await new Promise((r) => setTimeout(r, 1200))
-  submitting.value = false
-  submitted.value = true
-  // Reset after 4s
-  setTimeout(() => {
-    submitted.value = false
-    Object.assign(form, { name: '', email: '', type: '', message: '' })
-  }, 4000)
+  try {
+    const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        type: form.type,
+        message: form.message,
+      }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data?.error || `Submission failed (${res.status})`)
+    }
+    submitted.value = true
+    // Reset after 4s
+    setTimeout(() => {
+      submitted.value = false
+      Object.assign(form, { name: '', email: '', type: '', message: '' })
+    }, 4000)
+  } catch (e) {
+    error.value = e.message || 'Something went wrong. Please try again.'
+  } finally {
+    submitting.value = false
+  }
 }
 
 onMounted(() => {

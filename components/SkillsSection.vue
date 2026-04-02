@@ -34,8 +34,8 @@
               :key="skill"
               class="px-4 py-2 rounded-full text-sm font-exo font-medium text-slate-300 border border-f1-border bg-f1-card hover:border-opacity-100 transition-all duration-300 cursor-default whitespace-nowrap hover:scale-105"
               :style="{ '--hover-color': category.color }"
-              @mouseenter="($event.target as HTMLElement).style.borderColor = category.color"
-              @mouseleave="($event.target as HTMLElement).style.borderColor = ''"
+              @mouseenter="$event.target.style.borderColor = category.color"
+              @mouseleave="$event.target.style.borderColor = ''"
             >
               {{ skill }}
             </span>

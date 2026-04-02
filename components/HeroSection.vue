@@ -90,6 +90,7 @@ const scrollIndicatorEl = ref(null)
 const scrollLineEl = ref(null)
 
 let renderer, scene, camera, mesh, light1, light2, animId
+let geo, mat
 let mouseX = 0
 let mouseY = 0
 let targetMouseX = 0
@@ -104,7 +105,14 @@ onMounted(() => {
 
 onUnmounted(() => {
   cancelAnimationFrame(animId)
+  geo?.dispose()
+  mat?.dispose()
   renderer?.dispose()
+  if (renderer?.domElement?.parentNode) {
+    renderer.domElement.parentNode.removeChild(renderer.domElement)
+  }
+  gsap.killTweensOf(light1?.position)
+  gsap.killTweensOf(light2?.position)
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('resize', onResize)
   ScrollTrigger.getAll().forEach((t) => t.kill())
@@ -140,8 +148,8 @@ function initScene() {
   scene.add(light3)
 
   // Primary 3D object — TorusKnot with metallic phong material
-  const geo = new THREE.TorusKnotGeometry(1.6, 0.48, 256, 48, 2, 3)
-  const mat = new THREE.MeshPhongMaterial({
+  geo = new THREE.TorusKnotGeometry(1.6, 0.48, 256, 48, 2, 3)
+  mat = new THREE.MeshPhongMaterial({
     color: new THREE.Color(0x0a0a1a),
     specular: new THREE.Color(0x06b6d4),
     shininess: 160,
